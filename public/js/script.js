@@ -1,4 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+module.exports = { "default": require("core-js/library/fn/object/define-property"), __esModule: true };
+},{"core-js/library/fn/object/define-property":4}],2:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -8,7 +10,243 @@ exports.default = function (instance, Constructor) {
     throw new TypeError("Cannot call a class as a function");
   }
 };
-},{}],2:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
+"use strict";
+
+exports.__esModule = true;
+
+var _defineProperty = require("../core-js/object/define-property");
+
+var _defineProperty2 = _interopRequireDefault(_defineProperty);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = function () {
+  function defineProperties(target, props) {
+    for (var i = 0; i < props.length; i++) {
+      var descriptor = props[i];
+      descriptor.enumerable = descriptor.enumerable || false;
+      descriptor.configurable = true;
+      if ("value" in descriptor) descriptor.writable = true;
+      (0, _defineProperty2.default)(target, descriptor.key, descriptor);
+    }
+  }
+
+  return function (Constructor, protoProps, staticProps) {
+    if (protoProps) defineProperties(Constructor.prototype, protoProps);
+    if (staticProps) defineProperties(Constructor, staticProps);
+    return Constructor;
+  };
+}();
+},{"../core-js/object/define-property":1}],4:[function(require,module,exports){
+require('../../modules/es6.object.define-property');
+var $Object = require('../../modules/_core').Object;
+module.exports = function defineProperty(it, key, desc) {
+  return $Object.defineProperty(it, key, desc);
+};
+
+},{"../../modules/_core":7,"../../modules/es6.object.define-property":20}],5:[function(require,module,exports){
+module.exports = function (it) {
+  if (typeof it != 'function') throw TypeError(it + ' is not a function!');
+  return it;
+};
+
+},{}],6:[function(require,module,exports){
+var isObject = require('./_is-object');
+module.exports = function (it) {
+  if (!isObject(it)) throw TypeError(it + ' is not an object!');
+  return it;
+};
+
+},{"./_is-object":16}],7:[function(require,module,exports){
+var core = module.exports = { version: '2.5.0' };
+if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
+
+},{}],8:[function(require,module,exports){
+// optional / simple context binding
+var aFunction = require('./_a-function');
+module.exports = function (fn, that, length) {
+  aFunction(fn);
+  if (that === undefined) return fn;
+  switch (length) {
+    case 1: return function (a) {
+      return fn.call(that, a);
+    };
+    case 2: return function (a, b) {
+      return fn.call(that, a, b);
+    };
+    case 3: return function (a, b, c) {
+      return fn.call(that, a, b, c);
+    };
+  }
+  return function (/* ...args */) {
+    return fn.apply(that, arguments);
+  };
+};
+
+},{"./_a-function":5}],9:[function(require,module,exports){
+// Thank's IE8 for his funny defineProperty
+module.exports = !require('./_fails')(function () {
+  return Object.defineProperty({}, 'a', { get: function () { return 7; } }).a != 7;
+});
+
+},{"./_fails":12}],10:[function(require,module,exports){
+var isObject = require('./_is-object');
+var document = require('./_global').document;
+// typeof document.createElement is 'object' in old IE
+var is = isObject(document) && isObject(document.createElement);
+module.exports = function (it) {
+  return is ? document.createElement(it) : {};
+};
+
+},{"./_global":13,"./_is-object":16}],11:[function(require,module,exports){
+var global = require('./_global');
+var core = require('./_core');
+var ctx = require('./_ctx');
+var hide = require('./_hide');
+var PROTOTYPE = 'prototype';
+
+var $export = function (type, name, source) {
+  var IS_FORCED = type & $export.F;
+  var IS_GLOBAL = type & $export.G;
+  var IS_STATIC = type & $export.S;
+  var IS_PROTO = type & $export.P;
+  var IS_BIND = type & $export.B;
+  var IS_WRAP = type & $export.W;
+  var exports = IS_GLOBAL ? core : core[name] || (core[name] = {});
+  var expProto = exports[PROTOTYPE];
+  var target = IS_GLOBAL ? global : IS_STATIC ? global[name] : (global[name] || {})[PROTOTYPE];
+  var key, own, out;
+  if (IS_GLOBAL) source = name;
+  for (key in source) {
+    // contains in native
+    own = !IS_FORCED && target && target[key] !== undefined;
+    if (own && key in exports) continue;
+    // export native or passed
+    out = own ? target[key] : source[key];
+    // prevent global pollution for namespaces
+    exports[key] = IS_GLOBAL && typeof target[key] != 'function' ? source[key]
+    // bind timers to global for call from export context
+    : IS_BIND && own ? ctx(out, global)
+    // wrap global constructors for prevent change them in library
+    : IS_WRAP && target[key] == out ? (function (C) {
+      var F = function (a, b, c) {
+        if (this instanceof C) {
+          switch (arguments.length) {
+            case 0: return new C();
+            case 1: return new C(a);
+            case 2: return new C(a, b);
+          } return new C(a, b, c);
+        } return C.apply(this, arguments);
+      };
+      F[PROTOTYPE] = C[PROTOTYPE];
+      return F;
+    // make static versions for prototype methods
+    })(out) : IS_PROTO && typeof out == 'function' ? ctx(Function.call, out) : out;
+    // export proto methods to core.%CONSTRUCTOR%.methods.%NAME%
+    if (IS_PROTO) {
+      (exports.virtual || (exports.virtual = {}))[key] = out;
+      // export proto methods to core.%CONSTRUCTOR%.prototype.%NAME%
+      if (type & $export.R && expProto && !expProto[key]) hide(expProto, key, out);
+    }
+  }
+};
+// type bitmap
+$export.F = 1;   // forced
+$export.G = 2;   // global
+$export.S = 4;   // static
+$export.P = 8;   // proto
+$export.B = 16;  // bind
+$export.W = 32;  // wrap
+$export.U = 64;  // safe
+$export.R = 128; // real proto method for `library`
+module.exports = $export;
+
+},{"./_core":7,"./_ctx":8,"./_global":13,"./_hide":14}],12:[function(require,module,exports){
+module.exports = function (exec) {
+  try {
+    return !!exec();
+  } catch (e) {
+    return true;
+  }
+};
+
+},{}],13:[function(require,module,exports){
+// https://github.com/zloirock/core-js/issues/86#issuecomment-115759028
+var global = module.exports = typeof window != 'undefined' && window.Math == Math
+  ? window : typeof self != 'undefined' && self.Math == Math ? self
+  // eslint-disable-next-line no-new-func
+  : Function('return this')();
+if (typeof __g == 'number') __g = global; // eslint-disable-line no-undef
+
+},{}],14:[function(require,module,exports){
+var dP = require('./_object-dp');
+var createDesc = require('./_property-desc');
+module.exports = require('./_descriptors') ? function (object, key, value) {
+  return dP.f(object, key, createDesc(1, value));
+} : function (object, key, value) {
+  object[key] = value;
+  return object;
+};
+
+},{"./_descriptors":9,"./_object-dp":17,"./_property-desc":18}],15:[function(require,module,exports){
+module.exports = !require('./_descriptors') && !require('./_fails')(function () {
+  return Object.defineProperty(require('./_dom-create')('div'), 'a', { get: function () { return 7; } }).a != 7;
+});
+
+},{"./_descriptors":9,"./_dom-create":10,"./_fails":12}],16:[function(require,module,exports){
+module.exports = function (it) {
+  return typeof it === 'object' ? it !== null : typeof it === 'function';
+};
+
+},{}],17:[function(require,module,exports){
+var anObject = require('./_an-object');
+var IE8_DOM_DEFINE = require('./_ie8-dom-define');
+var toPrimitive = require('./_to-primitive');
+var dP = Object.defineProperty;
+
+exports.f = require('./_descriptors') ? Object.defineProperty : function defineProperty(O, P, Attributes) {
+  anObject(O);
+  P = toPrimitive(P, true);
+  anObject(Attributes);
+  if (IE8_DOM_DEFINE) try {
+    return dP(O, P, Attributes);
+  } catch (e) { /* empty */ }
+  if ('get' in Attributes || 'set' in Attributes) throw TypeError('Accessors not supported!');
+  if ('value' in Attributes) O[P] = Attributes.value;
+  return O;
+};
+
+},{"./_an-object":6,"./_descriptors":9,"./_ie8-dom-define":15,"./_to-primitive":19}],18:[function(require,module,exports){
+module.exports = function (bitmap, value) {
+  return {
+    enumerable: !(bitmap & 1),
+    configurable: !(bitmap & 2),
+    writable: !(bitmap & 4),
+    value: value
+  };
+};
+
+},{}],19:[function(require,module,exports){
+// 7.1.1 ToPrimitive(input [, PreferredType])
+var isObject = require('./_is-object');
+// instead of the ES6 spec version, we didn't implement @@toPrimitive case
+// and the second argument - flag - preferred type is a string
+module.exports = function (it, S) {
+  if (!isObject(it)) return it;
+  var fn, val;
+  if (S && typeof (fn = it.toString) == 'function' && !isObject(val = fn.call(it))) return val;
+  if (typeof (fn = it.valueOf) == 'function' && !isObject(val = fn.call(it))) return val;
+  if (!S && typeof (fn = it.toString) == 'function' && !isObject(val = fn.call(it))) return val;
+  throw TypeError("Can't convert object to primitive value");
+};
+
+},{"./_is-object":16}],20:[function(require,module,exports){
+var $export = require('./_export');
+// 19.1.2.4 / 15.2.3.6 Object.defineProperty(O, P, Attributes)
+$export($export.S + $export.F * !require('./_descriptors'), 'Object', { defineProperty: require('./_object-dp').f });
+
+},{"./_descriptors":9,"./_export":11,"./_object-dp":17}],21:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.2.4
  * http://jquery.com/
@@ -9824,7 +10062,151 @@ if ( !noGlobal ) {
 return jQuery;
 }));
 
-},{}],3:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
+
+var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/*
+* 花火のたま
+*/
+
+var Ball = function Ball() {
+  var param = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  (0, _classCallCheck3.default)(this, Ball);
+
+  this.accel = 0; // 速度・加速
+  this.angle = 0; // 進む角度
+  this.distance = 0; // 距離
+  this.color = param.color; // 色
+  this.size = param.size; // 大きさ
+  this.posX = param.posX; // x座標  
+  this.posY = param.posY; // y座標
+} // end constructor
+
+;
+
+exports.default = Ball;
+; // end Ball
+
+},{"babel-runtime/helpers/classCallCheck":2}],23:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
+
+var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+
+var _createClass2 = require("babel-runtime/helpers/createClass");
+
+var _createClass3 = _interopRequireDefault(_createClass2);
+
+var _Ball = require("./Ball");
+
+var _Ball2 = _interopRequireDefault(_Ball);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var Fireworks = function () {
+  function Fireworks() {
+    var param = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    (0, _classCallCheck3.default)(this, Fireworks);
+
+    this.posX = param.posX; // x座標
+    this.posY = param.posY; // y座標
+    this.balls = [];
+  } // end constructor
+
+  (0, _createClass3.default)(Fireworks, [{
+    key: "getRand",
+    value: function getRand(len, ran) {
+      return Math.floor(Math.random() * len + ran);
+    } // end getRand
+
+  }, {
+    key: "makeFireworks",
+    value: function makeFireworks() {
+      for (var i = 0, size = this.getRand(10, 50); i < size; ++i) {
+        this.balls.push(new _Ball2.default({
+          color: {
+            r: 0,
+            g: 200,
+            b: 255
+          },
+          size: 2,
+          posX: this.posX + this.getRand(20, -10),
+          posY: this.posY + this.getRand(20, -10)
+        }));
+      } // end for
+    } // end makeFireworks
+
+  }, {
+    key: "calcAccel",
+    value: function calcAccel() {
+      this.balls.forEach(function (ball, index, array) {
+        ball.accel = ball.distance * 0.2;
+      }); // end forEach
+    } // end calcAccel
+
+  }, {
+    key: "calcAngle",
+    value: function calcAngle() {
+      var x = this.posX;
+      var y = this.posY;
+
+      this.balls.forEach(function (ball, index, array) {
+        ball.angle = Math.atan2(ball.posY - y, ball.posX - x) / (Math.PI / 180);
+      }); // end forEach
+    } // end calcAngle
+
+  }, {
+    key: "calcDistance",
+    value: function calcDistance() {
+      var x = this.posX;
+      var y = this.posY;
+
+      this.balls.forEach(function (ball, index, array) {
+        ball.distance = Math.abs(Math.sqrt(Math.pow(ball.posX - x, 2) + Math.pow(ball.posY - y, 2)));
+      }); // end forEach
+    } // end calcDistance
+
+  }, {
+    key: "popFireworks",
+    value: function popFireworks() {
+      var x = this.posX;
+      var y = this.posY;
+
+      var i = 0;
+      this.balls.forEach(function (ball, index, array) {
+        if (!i++) console.log(ball.distance);
+        ++ball.distance;
+        ball.posX = ball.distance * (ball.angle * Math.cos(Math.PI / 180)) + x;
+        ball.posY = ball.distance * (ball.angle * Math.sin(Math.PI / 180)) + y;
+      }); // end forEach
+      console.log("POP!");
+    } // end popFireworks
+
+  }]);
+  return Fireworks;
+}(); /*
+     * 花火
+     */
+
+exports.default = Fireworks;
+; // end Fireworks
+
+},{"./Ball":22,"babel-runtime/helpers/classCallCheck":2,"babel-runtime/helpers/createClass":3}],24:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -9847,7 +10229,7 @@ var Sample = function Sample() {
 exports.default = Sample;
 ;
 
-},{"babel-runtime/helpers/classCallCheck":1}],4:[function(require,module,exports){
+},{"babel-runtime/helpers/classCallCheck":2}],25:[function(require,module,exports){
 'use strict';
 
 var _Sample = require('./lib/Sample');
@@ -9858,14 +10240,66 @@ var _jquery = require('jquery');
 
 var _jquery2 = _interopRequireDefault(_jquery);
 
+var _Fireworks = require('./lib/Fireworks');
+
+var _Fireworks2 = _interopRequireDefault(_Fireworks);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var sample = new _Sample2.default({
-    name: 'world'
+  name: 'world'
 });
 
 (0, _jquery2.default)('.wrapper').on('click', function () {
-    console.log('hello, ' + sample.name + '.');
+  console.log('hello, ' + sample.name + '.');
 });
 
-},{"./lib/Sample":3,"jquery":2}]},{},[4]);
+// ----
+
+var festival = function festival() {
+
+  var canvas = (0, _jquery2.default)('.canvas').get(0); // MISS
+
+  if (!canvas || !canvas.getContext) {
+    return false;
+  } // end if
+
+  canvas.height = (0, _jquery2.default)(window).height();
+  canvas.width = (0, _jquery2.default)(window).width();
+
+  var ctx = canvas.getContext('2d');
+
+  var fireworks = new _Fireworks2.default({
+    posX: 800,
+    posY: 500
+  });
+
+  fireworks.makeFireworks();
+
+  fireworks.balls.forEach(function (ball, index, array) {
+    ctx.fillStyle = 'rgb(255, 225, 100)';
+    ctx.beginPath();
+    ctx.arc(ball.posX, ball.posY, ball.size, 0, Math.PI * 2, false);
+    ctx.fill();
+  }); // end forEach
+
+  fireworks.calcDistance();
+  fireworks.calcAccel();
+  fireworks.calcAngle();
+
+  var fireflg = setInterval(function () {
+    ctx.clearRect(0, 0, 1920, 1080);
+    fireworks.popFireworks();
+
+    fireworks.balls.forEach(function (ball, index, array) {
+      ctx.fillStyle = 'rgb(255, 225, 100)';
+      ctx.beginPath();
+      ctx.arc(ball.posX, ball.posY, ball.size, 0, Math.PI * 2, false);
+      ctx.fill();
+    }); // end forEach
+  }, 100); // end setInterval
+}; // end festival
+
+festival();
+
+},{"./lib/Fireworks":23,"./lib/Sample":24,"jquery":21}]},{},[25]);
