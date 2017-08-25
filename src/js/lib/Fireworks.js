@@ -7,17 +7,14 @@ import Ball from './Ball';
 export default class Fireworks {
 
   constructor (param = {}) {
-    this.posX = param.posX; // x座標
-    this.posY = param.posY; // y座標
-    this.balls = [];
+    this.x = param.x; // x座標
+    this.y = param.y; // y座標
+    this.volume = param.volume; // 花火を形成する玉の個数
+    this.balls = [];// 花火を形成する玉の入れ物
   }// end constructor
 
-  getRand (len, ran) {
-    return Math.floor(Math.random() * len + ran);
-  }// end getRand
-
   makeFireworks () {
-    for (let i = 0, size =  this.getRand(10, 50); i < size; ++i) {
+    for (let i = 0; i < this.volume; ++i) {
       this.balls.push(new Ball({
         color : {
           r : 0,
@@ -25,8 +22,8 @@ export default class Fireworks {
           b : 255
         },
         size  : 2,
-        posX  : (this.posX + this.getRand(20, -10)),
-        posY  : (this.posY + this.getRand(20, -10))
+        x  : (this.x + getRand(20, -10)),
+        y  : (this.y + getRand(20, -10))
       }));
     }// end for
   }// end makeFireworks
@@ -38,36 +35,62 @@ export default class Fireworks {
   }// end calcAccel
 
   calcAngle () {
-    const x = this.posX;
-    const y = this.posY;
+    const point = {
+      x : this.x,
+      y : this.y
+    }// end point
 
     this.balls.forEach(function (ball, index, array) {
-      ball.angle = Math.atan2((ball.posY - y), (ball.posX - x)) / (Math.PI / 180);
+      ball.angle = getDegreeFromPoints(ball, point);
     });// end forEach
   }// end calcAngle
 
   calcDistance() {
-    const x = this.posX;
-    const y = this.posY;
+    const point = {
+      x : this.x,
+      y : this.y
+    }// end point
 
     this.balls.forEach(function (ball, index, array) {
-      ball.distance = Math.abs(Math.sqrt(Math.pow(ball.posX - x, 2) + Math.pow(ball.posY - y, 2)));
+      ball.distance = getDistanceFromPoints(ball, point);
     });// end forEach
   }// end calcDistance
 
   popFireworks () {
-    const x = this.posX;
-    const y = this.posY;
-
     let i = 0;
+    const posX = this.x;
+    const posY = this.y;
+
     this.balls.forEach(function (ball, index, array) {
       if (!i++)
         console.log(ball.distance);
       ++ball.distance;
-      ball.posX = ball.distance * (ball.angle * Math.cos(Math.PI / 180)) + x;
-      ball.posY = ball.distance * (ball.angle * Math.sin(Math.PI / 180)) + y;
+      ball.x = ball.distance * (ball.angle * Math.cos(Math.PI / 180)) + posX;
+      ball.y = ball.distance * (ball.angle * Math.sin(Math.PI / 180)) + posY;
     });// end forEach
-    console.log("POP!");
   }// end popFireworks
 
+  debug () {
+    console.log("x : "+ this.x);
+    console.log("y : "+ this.y);
+    console.log("volume : "+ this.volume);
+    console.log("distance : "+ this.balls[0].distance);
+    console.log("accel : "+ this.balls[0].accel);
+    console.log("angle : "+ this.balls[0].angle);
+  }// end debug
+
 };// end Fireworks
+
+function getDegreeFromPoints(p1, p2) {
+  const radian = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+  return radian * 180 / Math.PI;
+}// end getDegreeFromPoints
+
+function getDistanceFromPoints(p1, p2) {
+  const distance = Math.abs(Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2)));
+  return distance;
+}// end getDistanceFromPoints
+
+function getRand (len, ran) {
+  return Math.floor(Math.random() * len + ran);
+}// end getRand
